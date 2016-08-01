@@ -1,0 +1,41 @@
+Usage:
+ - API Documentation
+ - Unit testing
+
+
+/// Conversations
+///
+/// GET: /conversations 
+/// Params:
+///    since (number): A time the conversation starts
+///    until (number/string): A time the conversation ends
+/// Response:
+///    {
+///
+///
+///    }
+///
+
+Configurations:
+
+api_references:
+  opening: /*
+  prefix: ///
+  closing: */
+  sections:
+    name: \w+
+    parameters:
+      parameter: \w+
+    response:
+      body: raw
+  output: output.apib
+
+
+<identifier>:
+  prefix: <regex pattern>
+  sections:
+    <section_name>: <regex pattern>
+    <section_name>: <keyword>:<optional regex pattern>
+    <section_name>:
+      <subsection_name>: <regex pattern>...
+  output: <output_file>

@@ -1,0 +1,38 @@
+param:
+  pattern: (\w+)(\s*\((\w+)\))?:\s*(.+)
+  capture:
+    1: name
+    3: type
+    4: description
+
+api_reference:
+  prefix: /// 
+  section:
+    name: raw
+    description:
+      section: raw
+    arguments:
+      child:
+        param: \w+(\s*\((\w+)\))?:\s*(.+)
+        param: ref:param
+    returns: param
+
+unit_test:
+  prefix: /// 
+  child:
+    test:
+      section:
+        name:
+          pattern: (\w+):
+          capture:
+            1: name
+        data:
+          child:
+            test:
+              pattern: Test:\s*(.+)
+              capture:
+                1: code
+            expect:
+              pattern: Expected:\s*(.+)
+              capture:
+                1: result

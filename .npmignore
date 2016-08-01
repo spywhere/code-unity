@@ -1,0 +1,8 @@
+samples
+docs
+typings
+.editorconfig
+.gitignore
+.npmignore
+jsconfig.json
+typings.json
