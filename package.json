@@ -2,6 +2,11 @@
   "name": "code-unity",
   "version": "0.0.1",
   "description": "A code integration utility for unified code",
+  "author": "Sirisak Lueangsaksri <spywhere@digitalparticle.com>",
+  "repository": "spywhere/code-unity",
+  "bugs": {
+      "url": "https://github.com/spywhere/code-unity/issues"
+  },
   "main": "index.js",
   "bin": {
     "cuty": "bin/cuty.js"
@@ -9,6 +14,5 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
   "license": "MIT"
 }
