@@ -5,7 +5,7 @@
   "author": "Sirisak Lueangsaksri <spywhere@digitalparticle.com>",
   "repository": "spywhere/code-unity",
   "bugs": {
-      "url": "https://github.com/spywhere/code-unity/issues"
+    "url": "https://github.com/spywhere/code-unity/issues"
   },
   "main": "index.js",
   "bin": {
@@ -14,5 +14,11 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^2.9.0",
+    "glob-all": "^3.1.0",
+    "merge": "^1.2.0",
+    "yamljs": "^0.2.8"
+  }
 }

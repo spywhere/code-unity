@@ -52,9 +52,9 @@ Node value can be either one of the following...
 - `capture` (Object)  
   A key-value for each RegExp capture in which key is a capture group and value as a node name
 - `section` (Object)  
-  An unordered key-value for each sub-node in which each key is a node name and value is a `Node` object
+  An unordered key-value for each sub-node in which each key is a node name and value is a `NodeValue` object
 - `child` (Object)  
-  A key-value for each node list in which each key is a node name and value is a `Node` object
+  A key-value for each node list in which each key is a node name and value is a `NodeValue` object
 
 ## Output References
 

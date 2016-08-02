@@ -6,7 +6,7 @@ param:
     4: description
 
 api_reference:
-  prefix: /// 
+  prefix: ///
   section:
     name: raw
     description:
@@ -14,11 +14,11 @@ api_reference:
     arguments:
       child:
         param: \w+(\s*\((\w+)\))?:\s*(.+)
-        param: ref:param
+        param2: ref:param
     returns: param
 
 unit_test:
-  prefix: /// 
+  prefix: ///
   child:
     test:
       section:
