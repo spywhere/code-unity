@@ -51,8 +51,8 @@ Node value can be either one of the following...
   A prefix pattern for the body of a node
 - `pattern` (RegExp String)  
   A regular expression to match the content (without a prefix)
-- `capture` (Object)  
-  A key-value for each RegExp capture in which key is a capture group and value as a node name
+- `capture` (Array of String)  
+  A node name for each RegExp capture group's value
 - `section` (Object)  
   An unordered key-value for each sub-node in which each key is a node name and value is a `NodeValue` object
 - `child` (Object)  

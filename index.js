@@ -8,11 +8,12 @@ function CodeUnity(){}
 CodeUnity.prototype.referenceNode = function(nodeStructure){
     var baseNodes = [];
     for (var key in nodeStructure) {
-        if (nodeStructure.hasOwnProperty(key)) {
-            var nodeValue = nodeStructure[key];
-            var success = true;
-            baseNodes = baseNodes.concat(this.referenceNodeInValue(nodeValue));
+        if (!nodeStructure.hasOwnProperty(key)) {
+            continue;
         }
+        var nodeValue = nodeStructure[key];
+        var success = true;
+        baseNodes = baseNodes.concat(this.referenceNodeInValue(nodeValue));
     }
     return baseNodes;
 }
@@ -71,6 +72,7 @@ CodeUnity.prototype.structureForNode = function(node, lines, lineno){
         invalidCount = 0;
 
         var content = lines[lineno];
+        // Trim prefix
         if(node.prefix){
             var prefixPattern = new RegExp(node.prefix, "g");
             if(prefixPattern.test(content)){
@@ -78,6 +80,7 @@ CodeUnity.prototype.structureForNode = function(node, lines, lineno){
             }
         }
         var matches = null;
+        // Match the content
         if(node.pattern){
             var matchPattern = new RegExp(node.pattern, "g");
             matches = matchPattern.exec(content);
@@ -85,12 +88,13 @@ CodeUnity.prototype.structureForNode = function(node, lines, lineno){
         if(!matches){
             break;
         }
+        // Name the capture
         if(node.capture){
             for (var index = 0; index < node.capture.length; index++) {
-                var captureName = node.capture[index];
                 if(index >= matches.length){
                     break;
                 }
+                var captureName = node.capture[index];
                 structure[captureName] = matches[index];
             }
         }else{
@@ -127,24 +131,28 @@ CodeUnity.prototype.structureFor = function(filePath, options, callback){
         var line = lines[lineno];
         for (var key in options.config) {
             if (
-                options.config.hasOwnProperty(key) &&
-                options.excludes.indexOf(key) < 0
+                !options.config.hasOwnProperty(key) ||
+                options.excludes.indexOf(key) >= 0
             ) {
-                var node = options.config[key];
+                continue;
+            }
+            var node = options.config[key];
 
-                var result = this.structureForNode(node, lines, lineno);
-                if(result){
-                    lineno = result.lineno;
-                    if(structure[key]){
-                        structure[key].push(result.structure);
-                    }else{
-                        structure[key] = [result.structure];
-                    }
-                }
+            var result = this.structureForNode(node, lines, lineno);
+            if(!result){
+                continue;
+            }
+            lineno = result.lineno;
+            var resultStructure = {};
+            resultStructure[key] = result.structure;
+            if(structure[key]){
+                structure[key].push(resultStructure);
+            }else{
+                structure[key] = [resultStructure];
             }
         }
     }
-    console.log(structure);
+    return structure;
 };
 
 CodeUnity.prototype.structureFrom = function(globs, options, callback){
@@ -202,6 +210,13 @@ CodeUnity.prototype.outputTo = function(structure, file, callback){
 var cuty = new CodeUnity();
 module.exports = cuty;
 
-cuty.structureFrom("samples/simple.js", "samples/simple.cuty", function(err, result){
-    console.log(result);
-})
+cuty.structureFrom(
+    "samples/simple.js", "samples/simple.cuty",
+    function(err, result){
+        if(err){
+            console.log(err);
+            return;
+        }
+        console.log(JSON.stringify(result));
+    }
+);
