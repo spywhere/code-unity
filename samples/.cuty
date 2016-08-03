@@ -6,6 +6,7 @@ param:
     4: description
 
 api_reference:
+  test: ///\s*\w+
   prefix: ///
   section:
     name: raw
@@ -18,6 +19,7 @@ api_reference:
     returns: param
 
 unit_test:
+  test: ///\s*\w+
   prefix: ///
   child:
     test:

@@ -41,14 +41,16 @@ Node value can be either one of the following...
 
 ### Node
 
-- `prefix` (RegExp string)  
-  A line prefix
 - `opening` (RegExp String)  
-  The first alternation for the `prefix`
+  A testing pattern for the beginning of a node
+- `test` (RegExp string)  
+  A testing pattern for the body of a node
 - `closing` (RegExp String)  
-  The second alternation for the `prefix`
+  A testing pattern for the end of a node
+- `prefix` (RegExp string)  
+  A prefix pattern for the body of a node
 - `pattern` (RegExp String)  
-  A regular expression to match
+  A regular expression to match the content (without a prefix)
 - `capture` (Object)  
   A key-value for each RegExp capture in which key is a capture group and value as a node name
 - `section` (Object)  
