@@ -1,0 +1,6 @@
+match:
+  test: //\s*.+
+  prefix: //\s
+  pattern: .+
+  capture:
+  - title

@@ -1,0 +1,8 @@
+open_close:
+  test: //\s*.+
+  opening: "/\*"
+  prefix: //\s
+  closing: "\*/"
+  pattern: .+
+  capture:
+  - title

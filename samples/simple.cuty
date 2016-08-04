@@ -1,6 +1,0 @@
-simple:
-  test: //\s*\w+
-  prefix: //
-  pattern: "[\w\s]+"
-  capture:
-  - title

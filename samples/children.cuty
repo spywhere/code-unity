@@ -1,0 +1,8 @@
+child:
+  test: //\s*.+
+  prefix: //\s
+  child:
+    title:
+      pattern: "^[a-zA-Z].+"
+    count:
+      pattern: ^\d.+

@@ -1,0 +1,10 @@
+child:
+  test: ^\s*//\s+.+
+  prefix: ^\s*//\s
+  child:
+    title:
+      pattern: ^\w.*
+    children:
+      child:
+        name:
+          pattern: .+

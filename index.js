@@ -5,7 +5,9 @@ var fs = require("fs");
 
 function CodeUnity(){}
 
-CodeUnity.prototype.referenceNode = function(nodeStructure){
+CodeUnity.prototype.referenceNode = function(
+    nodeStructure
+){
     var baseNodes = [];
     for (var key in nodeStructure) {
         if (!nodeStructure.hasOwnProperty(key)) {
@@ -18,7 +20,9 @@ CodeUnity.prototype.referenceNode = function(nodeStructure){
     return baseNodes;
 }
 
-CodeUnity.prototype.referenceNodeInValue = function(nodeValue){
+CodeUnity.prototype.referenceNodeInValue = function(
+    nodeValue
+){
     if(typeof nodeValue === "object"){
         return this.referenceNodeInNode(nodeValue);
     }
@@ -30,7 +34,9 @@ CodeUnity.prototype.referenceNodeInValue = function(nodeValue){
     ) ? [nodeValue.substr(4)] : [];
 }
 
-CodeUnity.prototype.referenceNodeInNode = function(node){
+CodeUnity.prototype.referenceNodeInNode = function(
+    node
+){
     var baseNodes = [];
     if(node.section){
         baseNodes = baseNodes.concat(this.referenceNode(node.section));
@@ -41,9 +47,144 @@ CodeUnity.prototype.referenceNodeInNode = function(node){
     return baseNodes;
 };
 
-CodeUnity.prototype.structureForNode = function(node, lines, lineno){
-    // Test for opening
-    if(node.opening){
+CodeUnity.prototype.isNodeClosing = function(
+    content, options
+){
+    if(!options.closing){
+        return false;
+    }
+    var closingPattern = new RegExp(options.closing, "g");
+    return closingPattern.test(content);
+};
+
+CodeUnity.prototype.isNodeBody = function(
+    content, options
+){
+    if(this.isNodeClosing(content, options)){
+        return false;
+    }
+    if(!options.test){
+        return true;
+    }
+    var testPattern = new RegExp(options.test, "g");
+    return testPattern.test(content);
+};
+
+CodeUnity.prototype.contentForLine = function(
+    content, options
+){
+    if(options.prefix){
+        // Trim prefix
+        var prefixPattern = new RegExp(options.prefix, "g");
+        if(prefixPattern.test(content)){
+            content = content.substr(prefixPattern.lastIndex);
+        }
+    }
+    return content;
+};
+
+CodeUnity.prototype.structureForChild = function(
+    child, lines, lineno, opts
+){
+    var options = JSON.parse(JSON.stringify(opts || {}));
+    var invalidCount = 0;
+    var structure = {};
+
+    while(lineno + invalidCount < lines.length){
+        if(this.isNodeClosing(lines[lineno + invalidCount], options)){
+            break;
+        }
+
+        var valid = this.isNodeBody(lines[lineno + invalidCount], options);
+        if(!valid){
+            invalidCount += 1;
+            if(invalidCount > 1){
+                break;
+            }
+            continue;
+        }
+        lineno += invalidCount;
+        invalidCount = 0;
+
+        var content = this.contentForLine(lines[lineno], options);
+        if(options.indentLevel && options.indentLevel > 0){
+            var indentPattern = null;
+
+            if(options.indentLevel > 1){
+                indentPattern = new RegExp(
+                    "^" + options.indentWord + "{" + options.indentLevel + "}",
+                    "g"
+                );
+            }else{
+                indentPattern = /^(\t+| +)/g;
+            }
+            if(!indentPattern.test(content)){
+                break;
+            }
+
+            content = content.substr(indentPattern.lastIndex);
+        }
+
+        for (var key in child) {
+            var hasMatch = false;
+            if (!child.hasOwnProperty(key)) {
+                continue;
+            }
+            var childNode = child[key];
+            if(typeof childNode === "string"){
+                var matchPattern = new RegExp(childNode, "g");
+                var matches = matchPattern.exec(content);
+                if(!matches){
+                    continue;
+                }
+                hasMatch = true;
+                if(structure[key]){
+                    structure[key].push(matches[0]);
+                }else{
+                    structure[key] = [matches[0]];
+                }
+            }else if(typeof childNode === "object"){
+                var result = this.structureForNode(
+                    childNode, lines, lineno, options
+                );
+                if(!result){
+                    continue;
+                }
+                hasMatch = true;
+                lineno = result.lineno;
+                if(structure[key]){
+                    structure[key].push(result.structure);
+                }else{
+                    structure[key] = [result.structure];
+                }
+            }
+            if(!hasMatch){
+                continue;
+            }
+            lineno += 1;
+        }
+    }
+
+    if(Object.keys(structure).length == 0){
+        return null;
+    }
+
+    return {
+        lineno: lineno,
+        structure: structure
+    };
+};
+
+CodeUnity.prototype.structureForNode = function(
+    node, lines, lineno, opts
+){
+    var options = JSON.parse(JSON.stringify(opts || node));
+    var isRootNode = !opts;
+    if(!options.indentLevel){
+        options.indentLevel = 0;
+    }
+    if(isRootNode && node.opening){
+        // Test for opening pattern
         var openingPattern = new RegExp(node.opening, "g");
         if(!openingPattern.test(lines[lineno])){
             return null;
@@ -54,54 +195,83 @@ CodeUnity.prototype.structureForNode = function(node, lines, lineno){
     var invalidCount = 0;
     var structure = {};
 
-    while(lineno < lines.length){
-        var valid = false;
-        // Test for testing pattern
-        if(node.test){
-            var testPattern = new RegExp(node.test, "g");
-            valid = valid || testPattern.test(lines[lineno]);
+    while(lineno + invalidCount < lines.length){
+        if(this.isNodeClosing(lines[lineno + invalidCount], options)){
+            break;
         }
+
+        var valid = this.isNodeBody(lines[lineno + invalidCount], options);
         if(!valid){
             invalidCount += 1;
             if(invalidCount > 1){
                 break;
             }
-            lineno += 1;
             continue;
         }
+        lineno += invalidCount;
         invalidCount = 0;
 
-        var content = lines[lineno];
-        // Trim prefix
-        if(node.prefix){
-            var prefixPattern = new RegExp(node.prefix, "g");
-            if(prefixPattern.test(content)){
-                content = content.substr(prefixPattern.lastIndex);
+        var content = this.contentForLine(lines[lineno], options);
+
+        if(options.indentLevel && options.indentLevel > 0){
+            var indentPattern = null;
+
+            if(options.indentLevel > 1){
+                indentPattern = new RegExp(
+                    "^" + options.indentWord + "{" + options.indentLevel + "}",
+                    "g"
+                );
+            }else{
+                indentPattern = /^(\t+| +)/g;
             }
+            if(!indentPattern.test(content)){
+                break;
+            }
+
+            content = content.substr(indentPattern.lastIndex);
         }
+
         var matches = null;
-        // Match the content
         if(node.pattern){
+            // Match the content
             var matchPattern = new RegExp(node.pattern, "g");
             matches = matchPattern.exec(content);
-        }
-        if(!matches){
-            break;
-        }
-        // Name the capture
-        if(node.capture){
-            for (var index = 0; index < node.capture.length; index++) {
-                if(index >= matches.length){
-                    break;
-                }
-                var captureName = node.capture[index];
-                structure[captureName] = matches[index];
+            if(!matches){
+                break;
             }
-        }else{
-            structure = matches[0];
+            if(node.capture){
+                // Name the capture
+                for (var index = 0; index < node.capture.length; index++) {
+                    if(index >= matches.length){
+                        break;
+                    }
+                    var captureName = node.capture[index];
+                    structure[captureName] = matches[index];
+                }
+            }else{
+                structure = matches[0];
+            }
+            break;
+        }else if(node.child){
+            // Match the children
+            var childOptions = JSON.parse(JSON.stringify(options));
+            if(!isRootNode){
+                childOptions.indentLevel += 1;
+            }
+            var result = this.structureForChild(
+                node.child, lines, lineno, childOptions
+            );
+            if(!result){
+                lineno += 1;
+                continue;
+            }
+            lineno = result.lineno;
+            structure = result.structure;
+            break;
         }
         lineno += 1;
     }
+
     if(Object.keys(structure).length == 0){
         return null;
     }
@@ -112,7 +282,9 @@ CodeUnity.prototype.structureForNode = function(node, lines, lineno){
     };
 };
 
-CodeUnity.prototype.structureFor = function(filePath, options, callback){
+CodeUnity.prototype.structureFor = function(
+    filePath, options, callback
+){
     if(callback){
         var self = this;
         setTimeout(function(){
@@ -143,19 +315,19 @@ CodeUnity.prototype.structureFor = function(filePath, options, callback){
                 continue;
             }
             lineno = result.lineno;
-            var resultStructure = {};
-            resultStructure[key] = result.structure;
             if(structure[key]){
-                structure[key].push(resultStructure);
+                structure[key].push(result.structure);
             }else{
-                structure[key] = [resultStructure];
+                structure[key] = [result.structure];
             }
         }
     }
     return structure;
 };
 
-CodeUnity.prototype.structureFrom = function(globs, options, callback){
+CodeUnity.prototype.structureFrom = function(
+    globs, options, callback
+){
     if(callback){
         var self = this;
         setTimeout(function(){
@@ -193,7 +365,9 @@ CodeUnity.prototype.structureFrom = function(globs, options, callback){
     return baseStructure;
 };
 
-CodeUnity.prototype.outputTo = function(structure, file, callback){
+CodeUnity.prototype.outputTo = function(
+    structure, file, callback
+){
     if(callback){
         var self = this;
         setTimeout(function(){
@@ -211,12 +385,12 @@ var cuty = new CodeUnity();
 module.exports = cuty;
 
 cuty.structureFrom(
-    "samples/simple.js", "samples/simple.cuty",
+    "samples/nested_child.js", "samples/nested_child.cuty",
     function(err, result){
         if(err){
             console.log(err);
             return;
         }
-        console.log(JSON.stringify(result));
+        console.log(yaml.stringify(result, 10, 2));
     }
 );

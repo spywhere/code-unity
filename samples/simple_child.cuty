@@ -1,0 +1,5 @@
+simple_child:
+  test: //\s*.+
+  prefix: //\s
+  child:
+    title: .+
