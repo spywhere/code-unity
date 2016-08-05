@@ -5,6 +5,30 @@ var fs = require("fs");
 
 function CodeUnity(){}
 
+CodeUnity.prototype.log = function(
+    message, options, prefix
+){
+    options = options || {};
+    if(typeof message !== "string"){
+        message = yaml.stringify(message);
+    }
+
+    var offset = "";
+    if(options.indentLevel && options.indentLevel > 0){
+        offset += "  ".repeat(options.indentLevel);
+    }
+
+    console.log(
+        (prefix ? prefix : "") +
+        offset +
+        message.split("\n").join(
+            "\n" +
+            offset +
+            (prefix ? prefix : "")
+        )
+    );
+};
+
 CodeUnity.prototype.referenceNode = function(
     nodeStructure
 ){
@@ -89,6 +113,7 @@ CodeUnity.prototype.structureForChild = function(
     var options = JSON.parse(JSON.stringify(opts || {}));
     var invalidCount = 0;
     var structure = {};
+    var startLine = lineno;
 
     while(lineno + invalidCount < lines.length){
         if(this.isNodeClosing(lines[lineno + invalidCount], options)){
@@ -103,6 +128,7 @@ CodeUnity.prototype.structureForChild = function(
             }
             continue;
         }
+        var revertLineno = lineno;
         lineno += invalidCount;
         invalidCount = 0;
 
@@ -119,6 +145,7 @@ CodeUnity.prototype.structureForChild = function(
                 indentPattern = /^(\t+| +)/g;
             }
             if(!indentPattern.test(content)){
+                lineno = revertLineno;
                 break;
             }
 
@@ -143,6 +170,7 @@ CodeUnity.prototype.structureForChild = function(
                 }else{
                     structure[key] = [matches[0]];
                 }
+                lineno += 1;
             }else if(typeof childNode === "object"){
                 var result = this.structureForNode(
                     childNode, lines, lineno, options
@@ -159,13 +187,15 @@ CodeUnity.prototype.structureForChild = function(
                 }
             }
             if(!hasMatch){
+                if(lineno === startLine){
+                    break;
+                }
                 continue;
             }
-            lineno += 1;
         }
     }
 
-    if(Object.keys(structure).length == 0){
+    if(typeof structure === "object" && Object.keys(structure).length === 0){
         return null;
     }
 
@@ -194,6 +224,7 @@ CodeUnity.prototype.structureForNode = function(
 
     var invalidCount = 0;
     var structure = {};
+    var startLine = lineno;
 
     while(lineno + invalidCount < lines.length){
         if(this.isNodeClosing(lines[lineno + invalidCount], options)){
@@ -208,6 +239,7 @@ CodeUnity.prototype.structureForNode = function(
             }
             continue;
         }
+        var revertLineno = lineno;
         lineno += invalidCount;
         invalidCount = 0;
 
@@ -225,6 +257,7 @@ CodeUnity.prototype.structureForNode = function(
                 indentPattern = /^(\t+| +)/g;
             }
             if(!indentPattern.test(content)){
+                lineno = revertLineno;
                 break;
             }
 
@@ -251,6 +284,7 @@ CodeUnity.prototype.structureForNode = function(
             }else{
                 structure = matches[0];
             }
+            lineno += 1;
             break;
         }else if(node.child){
             // Match the children
@@ -262,6 +296,9 @@ CodeUnity.prototype.structureForNode = function(
                 node.child, lines, lineno, childOptions
             );
             if(!result){
+                if(lineno === startLine){
+                    break;
+                }
                 lineno += 1;
                 continue;
             }
@@ -272,7 +309,7 @@ CodeUnity.prototype.structureForNode = function(
         lineno += 1;
     }
 
-    if(Object.keys(structure).length == 0){
+    if(typeof structure === "object" && Object.keys(structure).length === 0){
         return null;
     }
 

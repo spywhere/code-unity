@@ -8,7 +8,10 @@ indent_style = space
 indent_size = 4
 trim_trailing_whitespace = true
 
-[*.pug,*.sass,*.yml,*.cuty]
+[*.yml]
+indent_size = 2
+
+[*.cuty]
 indent_size = 2
 
 [.cuty]
