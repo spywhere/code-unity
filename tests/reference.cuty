@@ -1,0 +1,8 @@
+title:
+  pattern: .+
+
+child:
+  test: //\s*.+
+  prefix: //\s
+  child:
+    title: ref:title

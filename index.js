@@ -159,22 +159,47 @@ CodeUnity.prototype.structureForChild = function(
             }
             var childNode = child[key];
             if(typeof childNode === "string"){
-                var matchPattern = new RegExp(childNode, "g");
-                var matches = matchPattern.exec(content);
-                if(!matches){
-                    continue;
-                }
-                hasMatch = true;
-                if(asSection){
-                    structure[key] = matches[0];
-                }else{
-                    if(structure[key]){
-                        structure[key].push(matches[0]);
-                    }else{
-                        structure[key] = [matches[0]];
+                if(childNode.toLowerCase().startsWith("ref:")){
+                    // Match the reference
+                    var node = this.options.config[childNode.substr(4)];
+                    if(!node){
+                        continue;
                     }
+                    var result = this.structureForNode(
+                        node, lines, lineno, options
+                    );
+                    if(!result){
+                        continue;
+                    }
+                    hasMatch = true;
+                    lineno = result.lineno;
+                    if(asSection){
+                        structure[key] = result.structure;
+                    }else{
+                        if(structure[key]){
+                            structure[key].push(result.structure);
+                        }else{
+                            structure[key] = [result.structure];
+                        }
+                    }
+                }else{
+                    var matchPattern = new RegExp(childNode, "g");
+                    var matches = matchPattern.exec(content);
+                    if(!matches){
+                        continue;
+                    }
+                    hasMatch = true;
+                    if(asSection){
+                        structure[key] = matches[0];
+                    }else{
+                        if(structure[key]){
+                            structure[key].push(matches[0]);
+                        }else{
+                            structure[key] = [matches[0]];
+                        }
+                    }
+                    lineno += 1;
                 }
-                lineno += 1;
             }else if(typeof childNode === "object"){
                 var result = this.structureForNode(
                     childNode, lines, lineno, options
@@ -332,13 +357,13 @@ CodeUnity.prototype.structureForNode = function(
 };
 
 CodeUnity.prototype.structureFor = function(
-    filePath, options, callback
+    filePath, opts, callback
 ){
     if(callback){
         var self = this;
         setTimeout(function(){
             try {
-                callback(null, self.structureFor(filePath, options));
+                callback(null, self.structureFor(filePath, opts));
             } catch (error) {
                 callback(error);
             }
@@ -350,16 +375,16 @@ CodeUnity.prototype.structureFor = function(
     var lines = fs.readFileSync(filePath, "utf8").split(/\r?\n/g);
     for (var lineno = 0; lineno < lines.length; lineno++) {
         var line = lines[lineno];
-        for (var key in options.config) {
+        for (var key in this.options.config) {
             if (
-                !options.config.hasOwnProperty(key) ||
-                options.excludes.indexOf(key) >= 0
+                !this.options.config.hasOwnProperty(key) ||
+                this.options.excludes.indexOf(key) >= 0
             ) {
                 continue;
             }
-            var node = options.config[key];
+            var node = this.options.config[key];
 
-            var result = this.structureForNode(node, lines, lineno);
+            var result = this.structureForNode(node, lines, lineno, opts);
             if(!result){
                 continue;
             }
@@ -406,9 +431,11 @@ CodeUnity.prototype.structureFrom = function(
         options.excludes = this.referenceNode(options.config);
     }
 
+    this.options = options;
+
     for (var index = 0; index < files.length; index++) {
         var file = files[index];
-        merge.recursive(baseStructure, this.structureFor(file, options))
+        merge.recursive(baseStructure, this.structureFor(file))
     }
 
     return baseStructure;
@@ -434,7 +461,7 @@ var cuty = new CodeUnity();
 module.exports = cuty;
 
 cuty.structureFrom(
-    "tests/nested_section.js", "tests/nested_section.cuty",
+    "tests/reference.js", "tests/reference.cuty",
     function(err, result){
         if(err){
             console.log(err);
