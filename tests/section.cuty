@@ -1,0 +1,6 @@
+section:
+  test: //\s*.+
+  prefix: //\s
+  section:
+    title:
+      pattern: .+

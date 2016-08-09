@@ -1,0 +1,10 @@
+section:
+  test: ^\s*//\s+.+
+  prefix: ^\s*//\s
+  section:
+    title:
+      pattern: .+
+    children:
+      section:
+        name:
+          pattern: .+

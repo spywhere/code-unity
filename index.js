@@ -108,7 +108,7 @@ CodeUnity.prototype.contentForLine = function(
 };
 
 CodeUnity.prototype.structureForChild = function(
-    child, lines, lineno, opts
+    child, asSection, lines, lineno, opts
 ){
     var options = JSON.parse(JSON.stringify(opts || {}));
     var invalidCount = 0;
@@ -165,10 +165,14 @@ CodeUnity.prototype.structureForChild = function(
                     continue;
                 }
                 hasMatch = true;
-                if(structure[key]){
-                    structure[key].push(matches[0]);
+                if(asSection){
+                    structure[key] = matches[0];
                 }else{
-                    structure[key] = [matches[0]];
+                    if(structure[key]){
+                        structure[key].push(matches[0]);
+                    }else{
+                        structure[key] = [matches[0]];
+                    }
                 }
                 lineno += 1;
             }else if(typeof childNode === "object"){
@@ -180,10 +184,14 @@ CodeUnity.prototype.structureForChild = function(
                 }
                 hasMatch = true;
                 lineno = result.lineno;
-                if(structure[key]){
-                    structure[key].push(result.structure);
+                if(asSection){
+                    structure[key] = result.structure;
                 }else{
-                    structure[key] = [result.structure];
+                    if(structure[key]){
+                        structure[key].push(result.structure);
+                    }else{
+                        structure[key] = [result.structure];
+                    }
                 }
             }
             if(!hasMatch){
@@ -286,14 +294,18 @@ CodeUnity.prototype.structureForNode = function(
             }
             lineno += 1;
             break;
-        }else if(node.child){
+        }else if(node.child || node.section){
             // Match the children
             var childOptions = JSON.parse(JSON.stringify(options));
             if(!isRootNode){
                 childOptions.indentLevel += 1;
             }
             var result = this.structureForChild(
-                node.child, lines, lineno, childOptions
+                node.child || node.section,
+                !!node.section,
+                lines,
+                lineno,
+                childOptions
             );
             if(!result){
                 if(lineno === startLine){
@@ -422,7 +434,7 @@ var cuty = new CodeUnity();
 module.exports = cuty;
 
 cuty.structureFrom(
-    "samples/nested_child.js", "samples/nested_child.cuty",
+    "tests/nested_section.js", "tests/nested_section.cuty",
     function(err, result){
         if(err){
             console.log(err);

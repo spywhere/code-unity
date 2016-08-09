@@ -1,0 +1,8 @@
+section:
+  test: //\s*.+
+  prefix: //\s
+  section:
+    title:
+      pattern: "^[a-zA-Z].+"
+    count:
+      pattern: ^\d.+
